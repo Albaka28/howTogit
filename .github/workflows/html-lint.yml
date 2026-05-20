@@ -13,7 +13,10 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Run HTMLHint
-      uses: htmlhint/htmlhint-action@v2
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
       with:
-        addresses: './**/*.html'
+        node-version: '20'
+
+    - name: Run HTMLHint
+      run: npx htmlhint "**/*.html"
