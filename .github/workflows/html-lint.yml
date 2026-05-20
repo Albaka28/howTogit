@@ -1,13 +1,23 @@
-name: HTML Linter
+name: HTML Lint & Deploy
 
 on:
   push:
     branches: [ "main", "master" ]
-  pull_request:
-    branches: [ "main", "master" ]
+
+# Erlaubt dem Workflow, die GitHub Pages Seite zu überschreiben
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Verhindert, dass mehrere Deploys gleichzeitig laufen und sich überschneiden
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
 
 jobs:
-  htmlhint:
+  # 1. JOB: Testen (CI)
+  lint:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
@@ -20,3 +30,22 @@ jobs:
 
     - name: Run HTMLHint
       run: npx htmlhint "**/*.html"
+
+    # Packt die HTML-Dateien für den Deploy-Job ein (Standard ist das Root-Verzeichnis '.')
+    # Falls dein fertiges HTML in einem Unterordner liegt (z.B. 'public'), passe 'path: .' an 'path: public' an.
+    - name: Upload Pages Artifact
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: '.'
+
+  # 2. JOB: Bereitstellen (CD) - läuft nur, wenn 'lint' erfolgreich war
+  deploy:
+    needs: lint
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4
